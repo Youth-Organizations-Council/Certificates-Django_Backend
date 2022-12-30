@@ -24,10 +24,10 @@ YOC_DIRECTOR = "Dyumna Madan"
 SECRET_KEY = "vXZQ5QbpEjY6lW$MMm8KN1cGYsa$KPKj82nqhw3e"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS=['https://*.yocouncil.org', 'https://*.netlify.app', 'http://localhost:3000', 'http://localhost:8000']
 CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app', 'https://certificate.yocouncil.org']
 
 # Application definition
@@ -82,16 +82,8 @@ WSGI_APPLICATION = "yoc_certificates_backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
 
-else:
-    DATABASES = {
+DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "NAME": "yoc_certs",
