@@ -23,4 +23,4 @@ COPY . $DockerHOME
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--workers=4", "yoc_certificates_backend.wsgi"]
+CMD ["gunicorn", "--workers=4", "yoc_certificates_backend.wsgi", "--bind 0.0.0.0:8000"]
