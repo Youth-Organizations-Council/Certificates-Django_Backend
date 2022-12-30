@@ -24,7 +24,7 @@ YOC_DIRECTOR = "Dyumna Madan"
 SECRET_KEY = "vXZQ5QbpEjY6lW$MMm8KN1cGYsa$KPKj82nqhw3e"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS=['https://*.yocouncil.org', 'https://*.netlify.app', 'http://localhost:3000', 'http://localhost:8000']
