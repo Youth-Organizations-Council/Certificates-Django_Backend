@@ -21,13 +21,14 @@ YOC_DIRECTOR = "Dyumna Madan"
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-m9xzix(we*+e^cj#o=+gntj8^^_^x78id_#ahm-bu^+@&d(1zf"
+SECRET_KEY = "vXZQ5QbpEjY6lW$MMm8KN1cGYsa$KPKj82nqhw3e"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app']
 
 # Application definition
 
@@ -41,6 +42,8 @@ INSTALLED_APPS = [
     "main",
     "drf_yasg",
     "rest_framework",
+    'rest_framework.authtoken',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +54,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = "yoc_certificates_backend.urls"
@@ -142,6 +147,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+
     ]
 }

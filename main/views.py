@@ -1,28 +1,26 @@
 # This is how the basic APIView class is imported
+import io
+import os
 import uuid
 from datetime import date
 
+from django.conf import settings
+from django.core.files import File
+from django.http import FileResponse
+from django.urls import reverse
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework import permissions
-
-from django.core.files import File
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, renderer_classes
 # DRF provides its own Response object which we will
 # use in place of Django's standard HttpResponse
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.views import APIView
 
 # Our example also requires randint
 from .models import *
-from .serializers import *
-import os
-from django.conf import settings
-
-from django.urls import reverse
-
-
 from .renderers import PNGRenderer
-import io
+from .serializers import *
 
 
 class OrganizationView(APIView):
@@ -34,7 +32,13 @@ class OrganizationView(APIView):
             uuid.UUID(str(id))
         except ValueError:
             return Response({'error': 'Invalid UUID'}, status=400)
-        org = Organization.objects.get(id=id)
+
+        try:
+            org = Organization.objects.get(id=id)
+        except:
+            return Response({'error': 'Organization not found'}, status=404)
+        if org is None:
+            return Response({'error': 'Organization not found'}, status=404)
         return Response({'id': org.id, 'name': org.name, 'description': org.description, 'logo':  org.logo.url if org.logo else None})
 
     def post(self, request, format=None):
@@ -72,7 +76,13 @@ class RepresentativeView(APIView):
             uuid.UUID(str(id))
         except ValueError:
             return Response({'error': 'Invalid UUID'}, status=400)
-        rep = Representative.objects.get(id=id)
+
+        try:
+            rep = Representative.objects.get(id=id)
+        except:
+            return Response({'error': 'Representative not found'}, status=404)
+        if rep is None:
+            return Response({'error': 'Representative not found'}, status=404)
         return Response({'organization': rep.organization.name, 'designation': rep.designation, 'is_active': rep.is_active, 'user': rep.user, 'country': rep.country})
 
     def post(self, request, format=None):
@@ -113,13 +123,25 @@ class CertificateView(APIView):
             uuid.UUID(str(id))
         except ValueError:
             return Response({'error': 'Invalid UUID'}, status=400)
-        cert = Certificate.objects.get(id=id)
 
-        return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
+        try:
+            cert = Certificate.objects.get(id=id)
+        except:
+            return Response({'error': 'Certificate not found'}, status=404)
+        if cert is None:
+            return Response({'error': 'Certificate not found'}, status=404)
+        return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'generation_time': cert.generation_time, 'is_revoked': cert.is_revoked, 'revokation_reason': cert.revokation_reason, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
 
     def post(self, request, format=None):
+
+        if not request.user.is_authenticated:
+            return Response({'error': 'You are not logged in'}, status=403)
+
+        if not Representative.objects.filter(user=request.user).exists():
+            return Response({'error': 'You are not a representative'}, status=403)
+        rep = Representative.objects.get(user=request.user)
         cert = Certificate.objects.create(
-            name=request.data['name'], description=request.data['description'], course=request.data['course'], organization=Organization.objects.get(id=request.data['organization']))
+            name=request.data['name'], description=request.data['description'], course=request.data['course'], organization=rep.organization)
 
         try:
             generate_certificate(cert)
@@ -127,7 +149,7 @@ class CertificateView(APIView):
             cert.delete()
             return Response({'error': 'Error generating certificate'}, status=400)
 
-        return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
+        return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'generation_time': cert.generation_time, 'is_revoked': cert.is_revoked, 'revokation_reason': cert.revokation_reason, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
 
     def delete(self, request, id=None, format=None):
         try:
@@ -137,6 +159,97 @@ class CertificateView(APIView):
         cert = Certificate.objects.get(id=id)
         cert.delete()
         return Response({'success': 'Certificate deleted'})
+
+
+@api_view(['GET'])
+def verify_certificate_existence(request, id):
+    try:
+        uuid.UUID(str(id))
+    except ValueError:
+        return Response({'error': 'Invalid UUID'}, status=400)
+
+    cert = Certificate.objects.filter(id=id).exists()
+    if cert:
+        return Response({'success': 'Certificate exists!'})
+    else:
+        return Response({'error': 'Certificate not found!'}, status=404)
+
+
+@api_view(['GET'])
+def cert_pdf_file(request, id):
+    try:
+        uuid.UUID(str(id))
+    except ValueError:
+        return Response({'error': 'Invalid UUID'}, status=400)
+
+    try:
+        cert = Certificate.objects.get(id=id)
+    except:
+        return Response({'error': 'Certificate not found'}, status=404)
+
+    blob = io.BytesIO()
+    cert_img_file = Image.open(cert.img_file.file)
+    if cert_img_file.mode != 'RGB':
+        cert_img_file = cert_img_file.convert('RGB')
+    cert_img_file.save(blob, 'PDF', resolution=100.0)
+    blob.seek(0)
+
+    return FileResponse(blob, as_attachment=False, filename=f'{cert.id}.pdf')
+
+
+@api_view(['GET'])
+def fetch_rep_and_org(request):
+
+    rep = Representative.objects.filter(user=request.user).exists()
+
+    if rep:
+        rep = Representative.objects.get(user=request.user)
+        return Response({'organization': rep.organization.name, 'org_id': rep.organization.id, 'designation': rep.designation, 'is_active': rep.is_active, 'user': rep.user, 'country': rep.country})
+
+    return Response({'error': 'User is not a representative'}, status=400)
+
+
+@api_view(['GET'])
+def fetch_org_certificates(request):
+
+    if request.user.is_authenticated:
+
+        rep = Representative.objects.filter(user=request.user).exists()
+        if rep:
+            rep = Representative.objects.get(user=request.user)
+            org = Organization.objects.get(id=rep.organization.id)
+            certs = Certificate.objects.filter(organization=org)
+            return Response([{'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'generation_time': cert.generation_time, 'is_revoked': cert.is_revoked, 'revokation_reason': cert.revokation_reason, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))} for cert in certs])
+        else:
+            return Response({'error': 'User is not a representative'}, status=400)
+
+    return Response({'error': 'User is not authenticated'}, status=403)
+
+
+@api_view(['POST'])
+def revoke_cert(request, id):
+    try:
+        uuid.UUID(str(id))
+    except ValueError:
+        return Response({'error': 'Invalid UUID'}, status=400)
+
+    if request.user.is_authenticated:
+        rep = Representative.objects.filter(user=request.user).exists()
+        if rep:
+            rep = Representative.objects.get(user=request.user)
+            org = Organization.objects.get(id=rep.organization.id)
+            if not Certificate.objects.filter(id=id).exists():
+                return Response({'error': 'Certificate not found'}, status=404)
+            cert = Certificate.objects.get(id=id)
+            if cert.organization != org:
+                return Response({'error': 'You are not authorized to revoke this certificate'}, status=403)
+        else:
+            return Response({'error': 'User is not a representative'}, status=400)
+
+    cert.is_revoked = True
+    cert.revokation_reason = request.data['revokation_reason'] if 'revokation_reason' in request.data else None
+    cert.save()
+    return Response({'success': 'Certificate revoked'})
 
 
 @api_view(['GET'])
