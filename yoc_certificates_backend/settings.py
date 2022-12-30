@@ -28,7 +28,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app', 'https://certificate.yocouncil.org/']
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app', 'https://certificate.yocouncil.org']
 
 # Application definition
 
