@@ -24,11 +24,11 @@ YOC_DIRECTOR = "Dyumna Madan"
 SECRET_KEY = "vXZQ5QbpEjY6lW$MMm8KN1cGYsa$KPKj82nqhw3e"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app']
+CORS_ALLOWED_ORIGINS = ['http://localhost:3000', 'https://yoc-certificates.netlify.app', 'https://certificate.yocouncil.org/']
 
 # Application definition
 
