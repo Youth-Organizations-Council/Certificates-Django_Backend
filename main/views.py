@@ -5,12 +5,10 @@ import uuid
 from datetime import date
 
 from django.conf import settings
-from django.core.files import File
 from django.http import FileResponse
 from django.urls import reverse
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework import permissions
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, renderer_classes
 # DRF provides its own Response object which we will
 # use in place of Django's standard HttpResponse
@@ -22,11 +20,16 @@ from .models import *
 from .renderers import PNGRenderer
 from .serializers import *
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 
 class OrganizationView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = OrganizationSerializer
 
+    @method_decorator(cache_page(60*60*2))
+    @method_decorator(vary_on_cookie)
     def get(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -41,11 +44,13 @@ class OrganizationView(APIView):
             return Response({'error': 'Organization not found'}, status=404)
         return Response({'id': org.id, 'name': org.name, 'description': org.description, 'logo':  org.logo.url if org.logo else None})
 
+    @method_decorator(cache_page(60*60*2))
     def post(self, request, format=None):
         org = Organization.objects.create(
             name=request.data['name'], description=request.data['description'])
         return Response({'id': org.id, 'name': org.name, 'description': org.description, 'logo':  org.logo.url if org.logo else None})
 
+    @method_decorator(cache_page(60*60*2))
     def put(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -57,6 +62,7 @@ class OrganizationView(APIView):
         org.save()
         return Response({org.id, org.name, org.description,  org.logo.url if org.logo else None})
 
+    @method_decorator(cache_page(60*60*2))
     def delete(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -71,6 +77,8 @@ class RepresentativeView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = RepresentativeSerializer
 
+    @method_decorator(cache_page(60*60*2))
+    @method_decorator(vary_on_cookie)
     def get(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -85,11 +93,13 @@ class RepresentativeView(APIView):
             return Response({'error': 'Representative not found'}, status=404)
         return Response({'organization': rep.organization.name, 'designation': rep.designation, 'is_active': rep.is_active, 'user': rep.user, 'country': rep.country})
 
+    @method_decorator(cache_page(60*60*2))
     def post(self, request, format=None):
         rep = Representative.objects.create(
             organization=Organization.objects.get(id=request.data['organization']), designation=request.data['designation'], is_active=request.data['is_active'], user=request.user, country=request.data['country'])
         return Response({'organization': rep.organization.name, 'designation': rep.designation, 'is_active': rep.is_active, 'user': rep.user, 'country': rep.country})
 
+    @method_decorator(cache_page(60*60*2))
     def put(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -104,6 +114,7 @@ class RepresentativeView(APIView):
         rep.save()
         return Response({'organization': rep.organization.name, 'designation': rep.designation, 'is_active': rep.is_active, 'user': rep.user, 'country': rep.country})
 
+    @method_decorator(cache_page(60*60*2))
     def delete(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -118,6 +129,8 @@ class CertificateView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     serializer_class = CertificateSerializer
 
+    @method_decorator(cache_page(60*60*2))
+    @method_decorator(vary_on_cookie)
     def get(self, request, id=None, format=None):
         try:
             uuid.UUID(str(id))
@@ -132,6 +145,7 @@ class CertificateView(APIView):
             return Response({'error': 'Certificate not found'}, status=404)
         return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'generation_time': cert.generation_time, 'is_revoked': cert.is_revoked, 'revokation_reason': cert.revokation_reason, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
 
+    @method_decorator(cache_page(60*60*2))
     def post(self, request, format=None):
 
         if not request.user.is_authenticated:
@@ -156,6 +170,7 @@ class CertificateView(APIView):
 
 
 @api_view(['GET'])
+@cache_page(60*60*2)
 def verify_certificate_existence(request, id):
     try:
         uuid.UUID(str(id))
@@ -170,6 +185,7 @@ def verify_certificate_existence(request, id):
 
 
 @api_view(['GET'])
+@cache_page(60*60*2)
 def cert_pdf_file(request, id):
     try:
         uuid.UUID(str(id))
@@ -182,7 +198,7 @@ def cert_pdf_file(request, id):
         return Response({'error': 'Certificate not found'}, status=404)
 
     blob = io.BytesIO()
-    cert_img_file = Image.open(cert.img_file.file)
+    cert_img_file = Image.open(generate_certificate(cert))
     if cert_img_file.mode != 'RGB':
         cert_img_file = cert_img_file.convert('RGB')
     cert_img_file.save(blob, 'PDF', resolution=100.0)
@@ -192,6 +208,7 @@ def cert_pdf_file(request, id):
 
 
 @api_view(['GET'])
+@cache_page(60*60*2)
 def fetch_rep_and_org(request):
 
     rep = Representative.objects.filter(user=request.user).exists()
@@ -204,6 +221,7 @@ def fetch_rep_and_org(request):
 
 
 @api_view(['GET'])
+@cache_page(60*60*2)
 def fetch_org_certificates(request):
 
     if request.user.is_authenticated:
@@ -248,6 +266,7 @@ def revoke_cert(request, id):
 
 @api_view(['GET'])
 @renderer_classes([PNGRenderer])
+@cache_page(60*60*2)
 def cert_img_file(request, id):
     try:
         uuid.UUID(str(id))
