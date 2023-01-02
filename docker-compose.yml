@@ -8,7 +8,7 @@ services:
     ports:
       - 6379:6379
     volumes:
-      - ./data:/data
+      - rediscache:/data
     networks:
       - yoc_certs
     command: redis-server --appendonly yes
@@ -21,6 +21,13 @@ services:
       - 2006:8000
     volumes:
       - yocmedia:/home/app/webapp/media
+    depends_on:
+      - redis
 
 volumes:
   yocmedia:
+  rediscache:
+
+networks:
+  yoc_certs:
+    driver: bridge
