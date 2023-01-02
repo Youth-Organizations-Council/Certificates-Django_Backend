@@ -28,7 +28,7 @@ YOC_DIRECTOR = os.environ.get("YOC_DIRECTOR", "YOC Director")
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS=['https://*.yocouncil.org', 'https://*.netlify.app', 'http://localhost:3000', 'http://localhost:8000']
@@ -86,7 +86,7 @@ WSGI_APPLICATION = "yoc_certificates_backend.wsgi.application"
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", "redis://localhost:6379/0"),
+        "LOCATION": "redis://127.0.0.1:6379",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
         },
