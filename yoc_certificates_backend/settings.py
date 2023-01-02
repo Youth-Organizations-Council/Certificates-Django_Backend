@@ -28,7 +28,7 @@ YOC_DIRECTOR = os.environ.get("YOC_DIRECTOR", "YOC Director")
 SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS=['https://*.yocouncil.org', 'https://*.netlify.app', 'http://localhost:3000', 'http://localhost:8000']
