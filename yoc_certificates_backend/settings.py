@@ -82,18 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "yoc_certificates_backend.wsgi.application"
 
-# Caches
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient"
-        },
-        "KEY_PREFIX": "yoc_certs"
-    }
-}
-
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 

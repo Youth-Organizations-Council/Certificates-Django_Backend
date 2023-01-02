@@ -1,18 +1,6 @@
 version: "3.7"
 
 services:
-  redis_cache:
-    image: redis:alpine
-    container_name: redis_cache
-    restart: always
-    ports:
-      - 6379:6379
-    volumes:
-      - rediscache:/data
-    networks:
-      - yoc_certs
-    command: redis-server 
-
   yoc:
     build: .
     container_name: yoc_certs
@@ -21,14 +9,11 @@ services:
       - 2006:8000
     volumes:
       - yocmedia:/home/app/webapp/media
-    depends_on:
-      - redis_cache
     env_file:
       - .env
 
 volumes:
   yocmedia:
-  rediscache:
 
 networks:
   yoc_certs:
