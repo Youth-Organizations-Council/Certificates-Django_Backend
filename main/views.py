@@ -143,12 +143,6 @@ class CertificateView(APIView):
         cert = Certificate.objects.create(
             name=request.data['name'], description=request.data['description'], course=request.data['course'], organization=rep.organization)
 
-        try:
-            generate_certificate(cert)
-        except:
-            cert.delete()
-            return Response({'error': 'Error generating certificate'}, status=400)
-
         return Response({'id': cert.id, 'name': cert.name, 'description': cert.description, 'course': cert.course, 'organization': cert.organization.name, 'generation_time': cert.generation_time, 'is_revoked': cert.is_revoked, 'revokation_reason': cert.revokation_reason, 'file': request.build_absolute_uri(reverse('cert_img_file', args=[cert.id]))})
 
     def delete(self, request, id=None, format=None):
@@ -260,7 +254,8 @@ def cert_img_file(request, id):
     except ValueError:
         return Response({'error': 'Invalid UUID'}, status=400)
     cert = Certificate.objects.get(id=id)
-    return Response(cert.img_file.file)
+    cert_blob = generate_certificate(cert)
+    return Response(cert_blob.getvalue(), content_type='image/png')
 
 
 def generate_certificate(cert: Certificate, format=None):
@@ -313,6 +308,5 @@ def generate_certificate(cert: Certificate, format=None):
 
     cert_file.paste(logo, ((width // 2) - 130, (height // 2) - 600))
     cert_file.save(blob, 'PNG')
-    cert.img_file.save(f"{cert.id}.png", File(blob))
 
-    return 0
+    return blob

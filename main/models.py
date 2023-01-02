@@ -27,7 +27,6 @@ class Certificate(models.Model):
     description = models.CharField(max_length=100)
     course = models.CharField(max_length=100)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    img_file = models.ImageField(upload_to='certificates', null=True, blank=True)
     generation_time = models.DateTimeField(auto_now_add=True)
     is_revoked = models.BooleanField(default=False)
     revokation_reason = models.CharField(max_length=100, null=True, blank=True)
