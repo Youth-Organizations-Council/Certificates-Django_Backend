@@ -15,13 +15,13 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-YOC_DIRECTOR = "Dyumna Madan"
+YOC_DIRECTOR = os.environ.get("YOC_DIRECTOR", "YOC Director")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "vXZQ5QbpEjY6lW$MMm8KN1cGYsa$KPKj82nqhw3e"
+SECRET_KEY = os.environ.get("SECRET_KEY", "secret")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -86,11 +86,11 @@ WSGI_APPLICATION = "yoc_certificates_backend.wsgi.application"
 DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": "yoc_certs",
-            "USER": "root",
-            "PASSWORD": "aerotoor",
-            "HOST": "165.22.214.195",
-            "PORT": os.environ.get("SQL_PORT", "5432"),
+            "NAME": os.environ.get("DB_NAME", "yoc_certs"),
+            "USER": os.environ.get("DB_USER", ""),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
         }
     }
 
